@@ -41,7 +41,15 @@
       "Bash(pnpm --filter @mind-sync/app start)",
       "Bash(tee /tmp/metro.log)",
       "Bash(adb reverse *)",
-      "Bash(adb shell *)"
+      "Bash(adb shell *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 9596 //F)",
+      "Bash(pnpm typecheck *)",
+      "Bash(chmod +x gradlew)",
+      "Bash(bash gradlew *)",
+      "Bash(pnpm start *)",
+      "Bash(adb logcat *)",
+      "Bash(pnpm *)"
     ]
   }
 }

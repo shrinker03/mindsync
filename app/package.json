@@ -36,6 +36,14 @@
     "react-test-renderer": "19.2.3",
     "typescript": "^5.8.3"
   },
+  "codegenConfig": {
+    "name": "AppSpecs",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.mindsync"
+    }
+  },
   "engines": {
     "node": ">= 22.11.0"
   }

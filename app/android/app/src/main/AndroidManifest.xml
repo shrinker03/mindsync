@@ -17,6 +17,17 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+      <service
+        android:name=".modules.MindSyncNotificationListenerService"
+        android:label="MindSync Notification Listener"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+        android:foregroundServiceType="dataSync"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.service.notification.NotificationListenerService" />
+        </intent-filter>
+      </service>
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
