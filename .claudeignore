@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+app/android/build/
+app/android/.gradle/
+app/android/app/build/
+app/.gradle/
+
+# Native toolchain caches
+app/android/.cxx/
+app/android/app/.cxx/
+
+# Generated Prisma client (re-derivable from schema.prisma)
+server/node_modules/.prisma/
+server/src/generated/
+
+# Lockfiles (huge, rarely inspected by hand)
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Env + secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# RN caches
+app/.metro/
+app/.expo/

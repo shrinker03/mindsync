@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Env + secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+pnpm-debug.log*
+npm-debug.log*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Android / RN caches (populated by M1)
+app/android/build/
+app/android/.gradle/
+app/android/app/build/
+app/android/.cxx/
+app/android/app/.cxx/
+app/.metro/
+app/.expo/
+app/vendor/
+
+# APK / signing artifacts
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Prisma generated client (populated by M6)
+server/node_modules/.prisma/
+server/src/generated/
