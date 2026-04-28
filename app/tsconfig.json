@@ -5,7 +5,10 @@
   ],
   "compilerOptions": {
     "types": ["jest"],
-    "typeRoots": ["../node_modules/@types"]
+    "typeRoots": ["../node_modules/@types"],
+    "paths": {
+      "@mind-sync/shared": ["../packages/shared/src/index.ts"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "android", "babel.config.js", "metro.config.js"]
