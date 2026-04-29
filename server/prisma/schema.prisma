@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SmsMessage {
+  id         BigInt   @id @default(autoincrement())
+  source     String
+  externalId String   @map("external_id")
+  address    String
+  body       String
+  date       BigInt
+  type       Int
+  threadId   String   @map("thread_id")
+  read       Int
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@unique([source, externalId], map: "sms_source_external_id_unique")
+  @@map("sms_messages")
+}
+
+model CallEntry {
+  id         BigInt   @id @default(autoincrement())
+  source     String
+  externalId String   @map("external_id")
+  number     String
+  duration   Int
+  date       BigInt
+  type       Int
+  name       String?
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@unique([source, externalId], map: "call_source_external_id_unique")
+  @@map("call_entries")
+}
+
+model Notification {
+  id         BigInt   @id @default(autoincrement())
+  source     String
+  externalId String   @map("external_id")
+  pkg        String
+  title      String?
+  text       String?
+  timestamp  BigInt
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@unique([source, externalId], map: "notification_source_external_id_unique")
+  @@map("notifications")
+}
