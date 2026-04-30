@@ -1,25 +1,15 @@
-export type SmsEnvelope = {
-  id: string;
-  address: string;
-  body: string;
-  date: number;
-  type: number;
-  threadId: string;
-  read: number;
-};
+import { z } from 'zod';
+import { SmsEnvelopeSchema, SmsBatchSchema } from './schemas/sms.js';
+import { CallEnvelopeSchema, CallBatchSchema } from './schemas/call.js';
+import { NotificationEnvelopeSchema, NotificationBatchSchema } from './schemas/notification.js';
 
-export type CallEnvelope = {
-  id: string;
-  number: string;
-  duration: number;
-  date: number;
-  type: number;
-  name: string | null;
-};
+export { SmsEnvelopeSchema, SmsBatchSchema };
+export { CallEnvelopeSchema, CallBatchSchema };
+export { NotificationEnvelopeSchema, NotificationBatchSchema };
 
-export type NotificationEnvelope = {
-  pkg: string;
-  title: string | null;
-  text: string | null;
-  timestamp: number;
-};
+export type SmsEnvelope = z.infer<typeof SmsEnvelopeSchema>;
+export type CallEnvelope = z.infer<typeof CallEnvelopeSchema>;
+export type NotificationEnvelope = z.infer<typeof NotificationEnvelopeSchema>;
+export type SmsBatch = z.infer<typeof SmsBatchSchema>;
+export type CallBatch = z.infer<typeof CallBatchSchema>;
+export type NotificationBatch = z.infer<typeof NotificationBatchSchema>;

@@ -17,8 +17,34 @@ while editing Prisma migrations.
 - `pnpm install` — install all workspaces
 - `pnpm -r build` — build everything
 - `pnpm -r typecheck` — typecheck everything
-- `pnpm --filter @mind-sync/app android` — launch app on connected device
 - `pnpm --filter @mind-sync/server dev` — run server (tsx watch)
+
+## Android build (always use PowerShell — Bash can't run `.bat`)
+
+**Before every build:** check free space. This machine fills up fast; Gradle needs ≥ 3 GB.
+```powershell
+Get-PSDrive C | ForEach-Object { "Free: {0:N1} GB" -f ($_.Free/1GB) }
+```
+
+**If < 3 GB free, clean first:**
+```powershell
+Remove-Item -Recurse -Force "$env:USERPROFILE\.gradle\caches\build-cache-*" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "$env:USERPROFILE\.gradle\daemon" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "$env:APPDATA\npm-cache" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "app\android\app\build" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "app\android\build" -ErrorAction SilentlyContinue
+pnpm store prune
+```
+
+**Build + install on device (two PowerShell tabs):**
+```powershell
+# Tab 1 — Metro bundler
+pnpm --filter @mind-sync/app start
+
+# Tab 2 — Gradle install
+cd app\android
+.\gradlew.bat app:installDebug -PreactNativeDevServerPort=8081
+```
 
 ## Conventions (cross-cutting)
 - TypeScript strict everywhere (see `tsconfig.base.json`). No `any` without

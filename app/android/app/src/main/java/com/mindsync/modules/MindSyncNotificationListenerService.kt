@@ -31,6 +31,7 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val ctx = reactContextRef?.get() ?: return
+        if (!ctx.hasActiveReactInstance()) return
         val extras = sbn.notification.extras
         val payload = Arguments.createMap().apply {
             putString("pkg", sbn.packageName)

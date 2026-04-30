@@ -9,6 +9,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.mindsync.modules.CallLogReaderPackage
 import com.mindsync.modules.NotificationListenerPackage
 import com.mindsync.modules.SmsReaderPackage
+import com.mindsync.modules.SyncModulePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -20,6 +21,7 @@ class MainApplication : Application(), ReactApplication {
           add(NotificationListenerPackage())
           add(SmsReaderPackage())
           add(CallLogReaderPackage())
+          add(SyncModulePackage())
         },
     )
   }
