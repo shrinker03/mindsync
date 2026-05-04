@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { runSync } from '../services/sync/syncRunner';
+import { appLog } from '../services/log';
 
 interface SyncState {
   isSyncing: boolean;
@@ -18,8 +19,11 @@ export const useSyncStore = create<SyncState>(set => ({
     try {
       await runSync();
       set({ isSyncing: false, lastSyncAt: Date.now() });
+      void appLog('info', 'sync', 'sync completed');
     } catch (e) {
-      set({ isSyncing: false, lastError: (e as Error).message });
+      const msg = (e as Error).message;
+      set({ isSyncing: false, lastError: msg });
+      void appLog('error', 'sync', 'sync failed', { message: msg });
     }
   },
 }));

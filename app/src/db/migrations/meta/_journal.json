@@ -8,6 +8,13 @@
       "when": 1777214486045,
       "tag": "0000_free_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1746201600000,
+      "tag": "0001_app_logs",
+      "breakpoints": true
     }
   ]
 }

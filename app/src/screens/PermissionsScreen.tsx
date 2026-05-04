@@ -10,7 +10,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { count } from 'drizzle-orm';
+import { count, desc } from 'drizzle-orm';
 import {
   usePermissionsStore,
   PermissionKey,
@@ -22,7 +22,7 @@ import { CallLogReaderModule } from '../native/CallLogReader';
 import { syncSms } from '../services/smsSync';
 import { syncCalls } from '../services/callSync';
 import { db } from '../db';
-import { smsMessages, callEntries, notifications } from '../db/schema';
+import { smsMessages, callEntries, notifications, appLogs } from '../db/schema';
 import type { SmsEnvelope, CallEnvelope } from '@mind-sync/shared';
 
 const PERMISSION_META: Record<PermissionKey, { label: string; description: string }> = {
@@ -43,6 +43,17 @@ const PERMISSION_META: Record<PermissionKey, { label: string; description: strin
     description: 'Show service status and sync alerts.',
   },
 };
+
+function levelColor(level: string): string {
+  if (level === 'error') return '#ef4444';
+  if (level === 'warn') return '#f59e0b';
+  return '#22c55e';
+}
+
+function formatTs(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+}
 
 function statusColor(status: PermissionStatus, isDark: boolean): string {
   switch (status) {
@@ -84,6 +95,7 @@ export function PermissionsScreen() {
   const [callError, setCallError] = useState<string | null>(null);
   const [dbCounts, setDbCounts] = useState<{ sms: number; calls: number; notifs: number } | null>(null);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [logs, setLogs] = useState<Array<{ id: number; level: string; tag: string; message: string; timestamp: number }>>([]);
 
   const refreshDbCounts = useCallback(() => {
     Promise.all([
@@ -93,6 +105,22 @@ export function PermissionsScreen() {
     ])
       .then(([s, c, n]) => setDbCounts({ sms: s?.n ?? 0, calls: c?.n ?? 0, notifs: n?.n ?? 0 }))
       .catch(() => setDbCounts(null));
+  }, []);
+
+  const refreshLogs = useCallback(() => {
+    db.select({
+      id: appLogs.id,
+      level: appLogs.level,
+      tag: appLogs.tag,
+      message: appLogs.message,
+      timestamp: appLogs.timestamp,
+    })
+      .from(appLogs)
+      .orderBy(desc(appLogs.timestamp))
+      .limit(30)
+      .all()
+      .then(setLogs)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -312,6 +340,33 @@ export function PermissionsScreen() {
         >
           <Text style={styles.btnText}>Sync SMS + Calls to DB</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: palette.card, borderColor: palette.border }]}>
+        <View style={styles.cardHeader}>
+          <Text style={[styles.permLabel, { color: palette.fg }]}>App Logs</Text>
+          <Text style={[styles.badge, { color: palette.muted }]}>{logs.length > 0 ? `${logs.length} shown` : ''}</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.btn, { backgroundColor: palette.accent }]}
+          onPress={refreshLogs}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.btnText}>Refresh logs</Text>
+        </TouchableOpacity>
+        {logs.length === 0 ? (
+          <Text style={[styles.permDesc, { color: palette.muted, marginTop: 6 }]}>No logs yet</Text>
+        ) : (
+          logs.map((entry, i) => (
+            <View key={entry.id} style={[styles.feedRow, { borderTopColor: palette.border, borderTopWidth: i === 0 ? 0 : 1 }]}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.feedPkg, { color: levelColor(entry.level) }]}>{entry.level.toUpperCase()} [{entry.tag}]</Text>
+                <Text style={[styles.feedText, { color: palette.muted }]}>{formatTs(entry.timestamp)}</Text>
+              </View>
+              <Text style={[styles.feedText, { color: palette.fg }]}>{entry.message}</Text>
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );

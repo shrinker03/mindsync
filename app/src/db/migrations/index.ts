@@ -1,5 +1,6 @@
 // Bundled migrations for React Native (no fs access at runtime).
-// Regenerate with: npx drizzle-kit generate, then update this file.
+// To add a migration: run drizzle-kit generate, copy the SQL here as a new const, add an entry to
+// journal.entries, and add a key to migrations.
 
 const sql0000 = `CREATE TABLE \`call_entries\` (
 \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -49,6 +50,15 @@ CREATE TABLE \`sync_cursors\` (
 \`updated_at\` integer NOT NULL
 );`;
 
+const sql0001 = `CREATE TABLE \`app_logs\` (
+\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+\`level\` text NOT NULL,
+\`tag\` text NOT NULL,
+\`message\` text NOT NULL,
+\`data\` text,
+\`timestamp\` integer NOT NULL
+);`;
+
 export const migrations = {
   journal: {
     version: '7',
@@ -61,9 +71,17 @@ export const migrations = {
         tag: '0000_free_quasar',
         breakpoints: true,
       },
+      {
+        idx: 1,
+        version: '6',
+        when: 1746201600000,
+        tag: '0001_app_logs',
+        breakpoints: true,
+      },
     ],
   },
   migrations: {
     m0000: sql0000,
+    m0001: sql0001,
   },
 };

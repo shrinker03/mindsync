@@ -60,3 +60,12 @@ export const syncCursors = sqliteTable('sync_cursors', {
   lastId: text('last_id').notNull().default(''),
   updatedAt: integer('updated_at').notNull(),
 });
+
+export const appLogs = sqliteTable('app_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  level: text('level').notNull(),
+  tag: text('tag').notNull(),
+  message: text('message').notNull(),
+  data: text('data'),
+  timestamp: integer('timestamp').notNull(),
+});
