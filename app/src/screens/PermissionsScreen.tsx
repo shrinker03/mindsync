@@ -19,6 +19,7 @@ import {
 import { NotificationListener, NotificationEvent } from '../native/NotificationListener';
 import { SmsReaderModule } from '../native/SmsReader';
 import { CallLogReaderModule } from '../native/CallLogReader';
+import { BatteryOptimization } from '../native/BatteryOptimization';
 import { syncSms } from '../services/smsSync';
 import { syncCalls } from '../services/callSync';
 import { db } from '../db';
@@ -87,6 +88,7 @@ export function PermissionsScreen() {
   const { statuses, refresh, request } = usePermissionsStore();
 
   const [nlEnabled, setNlEnabled] = useState<boolean | null>(null);
+  const [batteryExempt, setBatteryExempt] = useState<boolean | null>(null);
   const [feed, setFeed] = useState<NotificationEvent[]>([]);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [smsRows, setSmsRows] = useState<SmsEnvelope[] | null>(null);
@@ -131,11 +133,16 @@ export function PermissionsScreen() {
     const checkNl = () => {
       NotificationListener.isEnabled().then(setNlEnabled).catch(() => setNlEnabled(false));
     };
+    const checkBattery = () => {
+      BatteryOptimization.isIgnoring().then(setBatteryExempt).catch(() => setBatteryExempt(false));
+    };
     checkNl();
+    checkBattery();
 
     const sub = AppState.addEventListener('change', next => {
       if (appStateRef.current.match(/inactive|background/) && next === 'active') {
         checkNl();
+        checkBattery();
       }
       appStateRef.current = next;
     });
@@ -215,7 +222,32 @@ export function PermissionsScreen() {
         )}
       </View>
 
-      {allGranted && nlEnabled && (
+      <View style={[styles.card, { backgroundColor: palette.card, borderColor: palette.border }]}>
+        <View style={styles.cardHeader}>
+          <Text style={[styles.permLabel, { color: palette.fg }]}>Battery Optimization</Text>
+          <Text style={[styles.badge, { color: batteryExempt ? '#22c55e' : batteryExempt === null ? (isDark ? '#9ca3af' : '#6b7280') : '#ef4444' }]}>
+            {batteryExempt === null ? 'Checking…' : batteryExempt ? 'Exempted' : 'Restricted'}
+          </Text>
+        </View>
+        <Text style={[styles.permDesc, { color: palette.muted }]}>
+          Lets MindSync run in the background reliably. Required on Xiaomi, OnePlus, Oppo, Realme.
+        </Text>
+        {!batteryExempt && (
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: palette.accent }]}
+            onPress={() => {
+              BatteryOptimization.requestIgnore()
+                .then(() => BatteryOptimization.isIgnoring().then(setBatteryExempt))
+                .catch(() => {});
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.btnText}>Disable optimization</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {allGranted && nlEnabled && batteryExempt && (
         <View style={[styles.successBanner, { backgroundColor: '#dcfce7', borderColor: '#86efac' }]}>
           <Text style={styles.successText}>All permissions granted. MindSync is ready.</Text>
         </View>

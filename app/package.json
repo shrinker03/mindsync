@@ -13,6 +13,7 @@
   "dependencies": {
     "@mind-sync/shared": "workspace:*",
     "@op-engineering/op-sqlite": "^15.2.12",
+    "@react-native-async-storage/async-storage": "^2.1.0",
     "drizzle-orm": "^0.45.2",
     "react": "19.2.3",
     "react-native": "0.85.1",

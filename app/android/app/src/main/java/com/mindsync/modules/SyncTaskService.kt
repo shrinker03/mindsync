@@ -21,15 +21,20 @@ class SyncTaskService : HeadlessJsTaskService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
-        HeadlessJsTaskConfig(
+    override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? {
+        val payload = Arguments.createMap()
+        val reason = intent?.getStringExtra(EXTRA_REASON) ?: "periodic"
+        payload.putString("reason", reason)
+        return HeadlessJsTaskConfig(
             "SyncTask",
-            Arguments.createMap(),
+            payload,
             30_000L,
             true,
         )
+    }
 
     companion object {
         private const val FOREGROUND_ID = 2
+        const val EXTRA_REASON = "mind_sync_reason"
     }
 }

@@ -1,9 +1,9 @@
-import { SYNC_SERVER_URL, SYNC_BEARER_TOKEN } from './syncConfig';
+import { getBearerToken, getServerUrl } from './runtimeConfig';
 
 export type SyncResponse = { accepted: number; duplicates: number };
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise<void>(resolve => setTimeout(() => resolve(), ms));
 }
 
 export async function postBatch<T>(
@@ -11,7 +11,8 @@ export async function postBatch<T>(
   source: string,
   items: T[],
 ): Promise<SyncResponse> {
-  const url = `${SYNC_SERVER_URL}/api/sync/${type}`;
+  const [serverUrl, token] = await Promise.all([getServerUrl(), getBearerToken()]);
+  const url = `${serverUrl}/api/sync/${type}`;
   const body = JSON.stringify({ source, items });
 
   let lastError: Error = new Error('No attempts made');
@@ -22,7 +23,7 @@ export async function postBatch<T>(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${SYNC_BEARER_TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
         body,
       });

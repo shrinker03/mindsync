@@ -3,6 +3,7 @@ import { EmitterSubscription } from 'react-native';
 import { NotificationListener, type NotificationEvent } from '../native/NotificationListener';
 import { db } from '../db';
 import { notifications } from '../db/schema';
+import { isAllowed } from './notificationFilter';
 
 let subscription: EmitterSubscription | null = null;
 
@@ -11,6 +12,7 @@ function makeExternalId(event: NotificationEvent): string {
 }
 
 async function handleNotification(event: NotificationEvent): Promise<void> {
+  if (!(await isAllowed(event.pkg))) return;
   const externalId = makeExternalId(event);
   try {
     await db.insert(notifications)
