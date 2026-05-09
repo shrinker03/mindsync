@@ -5,12 +5,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.LruCache
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.lang.ref.WeakReference
 
 class MindSyncNotificationListenerService : NotificationListenerService() {
+
+    private val recentHashes = LruCache<String, Int>(256)
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -33,10 +36,20 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
         val ctx = reactContextRef?.get() ?: return
         if (!ctx.hasActiveReactInstance()) return
         val extras = sbn.notification.extras
+        val title = extras.getCharSequence("android.title")?.toString() ?: ""
+        val text = extras.getCharSequence("android.text")?.toString() ?: ""
+
+        // Drop reposts whose content hasn't changed since the last emission for the same key.
+        val contentHash = (sbn.packageName + "|" + title + "|" + text).hashCode()
+        val previous = recentHashes.get(sbn.key)
+        if (previous != null && previous == contentHash) return
+        recentHashes.put(sbn.key, contentHash)
+
         val payload = Arguments.createMap().apply {
             putString("pkg", sbn.packageName)
-            putString("title", extras.getCharSequence("android.title")?.toString() ?: "")
-            putString("text", extras.getCharSequence("android.text")?.toString() ?: "")
+            putString("key", sbn.key)
+            putString("title", title)
+            putString("text", text)
             putDouble("timestamp", sbn.postTime.toDouble())
         }
         ctx.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)

@@ -3,6 +3,7 @@ import NativeNotificationListener from '../specs/NativeNotificationListener';
 
 export type NotificationEvent = {
   pkg: string;
+  key?: string;
   title: string;
   text: string;
   timestamp: number;

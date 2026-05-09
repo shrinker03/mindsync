@@ -30,11 +30,18 @@ pnpm -r typecheck
 
 ### Every session
 
-**Check your local IP first** — the machine uses DHCP:
+**Pre-flight (one block, ~5 sec):**
 ```powershell
-ipconfig | Select-String "IPv4"
+# Free space (need ≥ 3 GB; only run the cleanup block in CLAUDE.md if below)
+Get-PSDrive C | ForEach-Object { "Free: {0:N1} GB" -f ($_.Free/1GB) }
+
+# Device + USB tunnels (do BOTH ports — adb daemon restart wipes these)
+adb devices
+adb reverse tcp:8081 tcp:8081  # Metro
+adb reverse tcp:3000 tcp:3000  # server (lets device hit http://localhost:3000)
 ```
-If it changed, update `app/src/services/sync/syncConfig.ts` → `SYNC_SERVER_URL` before building.
+
+If `adb devices` shows `unauthorized`, tap **Allow** on the phone (tick "Always allow from this computer" so it sticks).
 
 **Then start everything (three PowerShell tabs):**
 ```powershell
@@ -42,11 +49,41 @@ If it changed, update `app/src/services/sync/syncConfig.ts` → `SYNC_SERVER_URL
 pnpm --filter @mind-sync/server dev
 
 # Tab 2 — Metro bundler, debug only (wait for "Metro waiting on port 8081")
+# Do NOT pass --reset-cache unless you've changed Metro config or hit a stale-module bug;
+# a cold bundle is ~3-4 min, a warm one is ~30 sec.
 pnpm --filter @mind-sync/app start
 
 # Tab 3 — install debug APK on device
 cd app\android
 .\gradlew.bat app:installDebug -PreactNativeDevServerPort=8081
+```
+
+**Server URL & token live in the app at runtime, not in code.** The hardcoded
+defaults in `app/src/services/sync/syncConfig.ts` are only used as a one-time
+fallback the first time you launch on a fresh install. Set them via the
+Settings tab on device:
+- For USB-tethered dev: `http://localhost:3000` (works because of `adb reverse tcp:3000`)
+- For LAN: `http://<your-laptop-ipv4>:3000` (check with `ipconfig | Select-String IPv4`)
+
+**After an uninstall** (signature conflict between debug ↔ release, or a fresh
+install), AsyncStorage is wiped and you have to re-enter URL + token in
+Settings. To skip the UI flow on debug builds, drop straight into the app
+DB via adb:
+```powershell
+adb shell run-as com.mindsync sqlite3 databases/RKStorage `
+  "INSERT OR REPLACE INTO catalystLocalStorage VALUES ('mindsync.serverUrl','http://localhost:3000'), ('mindsync.bearerToken','<your-token>');"
+adb shell am force-stop com.mindsync
+adb shell am start -n com.mindsync/.MainActivity
+```
+
+**Pre-grant permissions on a fresh install** (saves manual UI taps):
+```powershell
+$pkg = "com.mindsync"
+adb shell pm grant $pkg android.permission.READ_SMS
+adb shell pm grant $pkg android.permission.RECEIVE_SMS
+adb shell pm grant $pkg android.permission.READ_CALL_LOG
+adb shell pm grant $pkg android.permission.POST_NOTIFICATIONS
+adb shell cmd notification allow_listener $pkg/.modules.MindSyncNotificationListenerService
 ```
 
 ---

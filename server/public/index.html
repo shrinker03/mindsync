@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindSync</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="login" class="login hidden">
+    <div class="login-card">
+      <h1>MindSync</h1>
+      <p>Enter bearer token to view your captured data.</p>
+      <input id="token-input" type="password" autocomplete="off" placeholder="Bearer token" />
+      <button id="login-btn">Sign in</button>
+      <p id="login-error" class="error"></p>
+    </div>
+  </div>
+
+  <header id="header" class="hidden">
+    <h1>MindSync</h1>
+    <nav class="tabs">
+      <button data-tab="notifications" class="tab active">Notifications</button>
+      <button data-tab="sms" class="tab">SMS</button>
+      <button data-tab="calls" class="tab">Calls</button>
+    </nav>
+    <div class="header-right">
+      <input id="search" type="search" placeholder="Search…" />
+      <button id="logout-btn" class="ghost">Sign out</button>
+    </div>
+  </header>
+
+  <main id="main" class="hidden">
+    <aside id="sidebar">
+      <h2>Apps</h2>
+      <ul id="pkg-list"></ul>
+    </aside>
+    <section id="content">
+      <ul id="rows"></ul>
+      <div id="status" class="status"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

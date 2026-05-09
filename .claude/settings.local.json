@@ -93,7 +93,12 @@
       "PowerShell(dir \"D:\\\\Workspace\\\\mind-sync\\\\app\\\\android\\\\app\\\\src\" -Recurse -File | Where-Object { $_.Extension -eq \".kt\" } | Select-Object FullName)",
       "PowerShell(Get-PSDrive C | ForEach-Object { \"Free: {0:N1} GB\" -f \\($_.Free/1GB\\) }; Get-PSDrive D | ForEach-Object { \"D Free: {0:N1} GB\" -f \\($_.Free/1GB\\) })",
       "PowerShell(Get-Content \"D:\\\\Workspace\\\\mind-sync\\\\app\\\\src\\\\services\\\\sync\\\\syncConfig.ts\"; \"\"; \"--- Server reachable from PC? ---\"; try { $r = Invoke-WebRequest \"http://10.114.131.243:3000/api/health\" -Headers @{Authorization=\"Bearer test-token-dev\"} -UseBasicParsing -TimeoutSec 4; \"OK $\\($r.StatusCode\\): $\\($r.Content\\)\" } catch { \"ERROR: $_\" }; \"\"; \"--- Current IPv4 addresses ---\"; ipconfig | Select-String \"IPv4\")",
-      "PowerShell(try { $r = Invoke-WebRequest \"http://10.114.131.201:3000/api/health\" -Headers @{Authorization=\"Bearer test-token-dev\"} -UseBasicParsing -TimeoutSec 5; \"OK $\\($r.StatusCode\\): $\\($r.Content\\)\" } catch { \"ERROR: $_\" })"
+      "PowerShell(try { $r = Invoke-WebRequest \"http://10.114.131.201:3000/api/health\" -Headers @{Authorization=\"Bearer test-token-dev\"} -UseBasicParsing -TimeoutSec 5; \"OK $\\($r.StatusCode\\): $\\($r.Content\\)\" } catch { \"ERROR: $_\" })",
+      "WebSearch",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell($line = \\(Get-Content D:\\\\Workspace\\\\mind-sync\\\\server\\\\.env | Select-String \"^SYNC_BEARER_TOKEN\"\\).Line; $token = $line.Split\\(\"=\",2\\)[1].Trim\\('\"'\\).Trim\\(\\); \"Token length: $\\($token.Length\\)\"; \"Anon health:\"; \\(Invoke-WebRequest \"http://localhost:3000/api/health\" -SkipHttpErrorCheck\\).StatusCode; \"Auth health:\"; \\(Invoke-WebRequest \"http://localhost:3000/api/health\" -Headers @{Authorization=\"Bearer $token\"} -SkipHttpErrorCheck\\).StatusCode; \"Static index:\"; \\(Invoke-WebRequest \"http://localhost:3000/\" -SkipHttpErrorCheck\\).StatusCode)",
+      "PowerShell(where.exe sqlite3 2>&1; \"---\"; where.exe sqlite 2>&1)",
+      "Bash(adb shell *)"
     ]
   }
 }

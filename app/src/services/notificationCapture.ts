@@ -7,8 +7,20 @@ import { isAllowed } from './notificationFilter';
 
 let subscription: EmitterSubscription | null = null;
 
+function fnv1aHex(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
 function makeExternalId(event: NotificationEvent): string {
-  return `${event.pkg}:${event.timestamp}`;
+  const key = event.key ?? '';
+  const payload = `${event.pkg}|${key}|${event.title}|${event.text}`;
+  // Two FNV-1a passes (raw + reversed) to widen the keyspace to 16 hex chars.
+  return fnv1aHex(payload) + fnv1aHex(payload.split('').reverse().join(''));
 }
 
 async function handleNotification(event: NotificationEvent): Promise<void> {
