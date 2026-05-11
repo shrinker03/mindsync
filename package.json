@@ -11,6 +11,9 @@
     "format": "prettier --write .",
     "lint": "pnpm -r --if-present lint"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "@prisma/client"]
+  },
   "devDependencies": {
     "prettier": "^3.3.3",
     "typescript": "^5.5.4"

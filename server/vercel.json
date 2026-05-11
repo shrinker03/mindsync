@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "cd .. && pnpm install --frozen-lockfile --ignore-scripts && pnpm rebuild @prisma/engines",
+  "installCommand": "cd .. && pnpm install --frozen-lockfile",
   "functions": {
     "api/index.ts": {
       "includeFiles": "public/**"
