@@ -98,7 +98,8 @@
       "PowerShell(Get-NetTCPConnection *)",
       "PowerShell($line = \\(Get-Content D:\\\\Workspace\\\\mind-sync\\\\server\\\\.env | Select-String \"^SYNC_BEARER_TOKEN\"\\).Line; $token = $line.Split\\(\"=\",2\\)[1].Trim\\('\"'\\).Trim\\(\\); \"Token length: $\\($token.Length\\)\"; \"Anon health:\"; \\(Invoke-WebRequest \"http://localhost:3000/api/health\" -SkipHttpErrorCheck\\).StatusCode; \"Auth health:\"; \\(Invoke-WebRequest \"http://localhost:3000/api/health\" -Headers @{Authorization=\"Bearer $token\"} -SkipHttpErrorCheck\\).StatusCode; \"Static index:\"; \\(Invoke-WebRequest \"http://localhost:3000/\" -SkipHttpErrorCheck\\).StatusCode)",
       "PowerShell(where.exe sqlite3 2>&1; \"---\"; where.exe sqlite 2>&1)",
-      "Bash(adb shell *)"
+      "Bash(adb shell *)",
+      "PowerShell(gh *)"
     ]
   }
 }

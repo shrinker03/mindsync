@@ -88,6 +88,84 @@ adb shell cmd notification allow_listener $pkg/.modules.MindSyncNotificationList
 
 ---
 
+## Remote deployment (Vercel + Neon)
+
+Pushes the server to Vercel Hobby (free, no CC, push-to-deploy) backed by a
+Neon Postgres free-tier database. After this, the laptop doesn't need to be
+on for the phone to sync.
+
+### One-time: Neon database
+
+1. Sign up at [neon.tech](https://neon.tech), create a project (any region close to
+   your phone). Copy the **pooled** connection string from the dashboard — it
+   ends with `?sslmode=require`.
+2. From the local machine, push the schema once:
+   ```powershell
+   cd server
+   $env:DATABASE_URL = '<paste-neon-url>'
+   npx prisma migrate deploy
+   ```
+3. Optional: paste the same URL into a temp env and run
+   `npx prisma studio` to confirm tables are created (then close it).
+
+### One-time: Vercel project
+
+1. Push the repo to GitHub if it isn't already. (`gh repo create`, etc.)
+2. [vercel.com](https://vercel.com) → **Add New** → **Project** → import the GitHub repo.
+3. **Framework Preset:** *Other*. **Root Directory:** `server`. Leave build
+   command + output dir empty — `vercel.json` drives the build.
+4. Under **Environment Variables**, add:
+   - `DATABASE_URL` = the Neon URL from above
+   - `SYNC_BEARER_TOKEN` = the same token the app uses
+   - `LOG_LEVEL` = `info`
+5. Click **Deploy**. First build runs `pnpm install` at the workspace root,
+   then `vercel-build` (`prisma generate`) inside `server/`, then bundles
+   `api/index.ts` with `@vercel/node`. Cold start is a few seconds.
+6. Once green, the URL is `https://<project>.vercel.app`. Test:
+   ```powershell
+   $token = '<your-token>'
+   Invoke-WebRequest -Uri "https://<project>.vercel.app/api/health" `
+     -Headers @{ Authorization = "Bearer $token" } -UseBasicParsing
+   ```
+   Should return `{"status":"ok","uptime":...}`.
+
+### Per change
+
+`git push origin main` — Vercel auto-deploys. No other action.
+
+### Point the phone at Vercel
+
+In the app's **Settings** tab:
+- Server URL: `https://<project>.vercel.app`
+- Bearer token: same as `SYNC_BEARER_TOKEN`
+- **Test connection** → `200`. **Save**.
+
+The local server can now stay off; the phone syncs to Vercel directly.
+
+### Things that are *not* needed
+
+- No `Dockerfile`, no `vercel build` locally, no `vercel-cli` install.
+- No app rebuild — runtime config picks up the new URL/token from Settings.
+- No change to `AndroidManifest.xml`'s `usesCleartextTraffic` — Vercel is
+  HTTPS-only so the flag is unused there, but keeping it lets local LAN dev
+  still work.
+
+### Troubleshooting
+
+- **Build fails on `prisma generate`:** Vercel didn't pick up `postinstall`.
+  Confirm `server/package.json` has both `postinstall` and `vercel-build`
+  set to `prisma generate`.
+- **Function logs file-system error:** the `VERCEL=1` branch in `src/log.ts`
+  isn't being taken. Vercel sets that env var automatically — re-deploy and
+  check **Deployments → Logs**.
+- **`@mind-sync/shared` not found at build time:** the build is running
+  inside `server/` without seeing the workspace root. In Vercel project
+  settings, set **Install Command** to `cd .. && pnpm install --frozen-lockfile`
+  or enable **Include source files outside the Root Directory** under
+  *Advanced Build Settings*.
+
+---
+
 ## Building a release APK
 
 ### One-time: generate signing keystore
