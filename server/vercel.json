@@ -1,6 +1,7 @@
 {
   "version": 2,
   "installCommand": "cd .. && pnpm install --frozen-lockfile --ignore-scripts",
+  "buildCommand": "echo 'using pre-generated prisma client'",
   "functions": {
     "api/index.ts": {
       "includeFiles": "public/**"

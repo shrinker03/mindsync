@@ -43,6 +43,5 @@ app/vendor/
 *.jks
 keystore.properties
 
-# Prisma generated client (populated by M6)
+# Prisma generated client (M15: committed for Vercel deploy without engine binary)
 server/node_modules/.prisma/
-server/src/generated/
