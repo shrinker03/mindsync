@@ -1,9 +1,6 @@
 {
   "version": 2,
-  "installCommand": "cd .. && pnpm install --frozen-lockfile",
-  "env": {
-    "PRISMA_CLI_BINARY_TARGETS": "rhel-openssl-3.0.x"
-  },
+  "installCommand": "cd .. && pnpm install --frozen-lockfile --ignore-scripts",
   "functions": {
     "api/index.ts": {
       "includeFiles": "public/**"
