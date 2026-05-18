@@ -4,7 +4,7 @@
   "buildCommand": "echo 'using pre-generated prisma client'",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "{public/**,src/generated/prisma-client/**}"
+      "includeFiles": "src/generated/prisma-client/**"
     }
   },
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
