@@ -201,7 +201,7 @@ const config = {
   },
   "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma-client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel SmsMessage {\n  id         BigInt   @id @default(autoincrement())\n  source     String\n  externalId String   @map(\"external_id\")\n  address    String\n  body       String\n  date       BigInt\n  type       Int\n  threadId   String   @map(\"thread_id\")\n  read       Int\n  receivedAt DateTime @default(now()) @map(\"received_at\")\n\n  @@unique([source, externalId], map: \"sms_source_external_id_unique\")\n  @@map(\"sms_messages\")\n}\n\nmodel CallEntry {\n  id         BigInt   @id @default(autoincrement())\n  source     String\n  externalId String   @map(\"external_id\")\n  number     String\n  duration   Int\n  date       BigInt\n  type       Int\n  name       String?\n  receivedAt DateTime @default(now()) @map(\"received_at\")\n\n  @@unique([source, externalId], map: \"call_source_external_id_unique\")\n  @@map(\"call_entries\")\n}\n\nmodel Notification {\n  id         BigInt   @id @default(autoincrement())\n  source     String\n  externalId String   @map(\"external_id\")\n  pkg        String\n  title      String?\n  text       String?\n  timestamp  BigInt\n  receivedAt DateTime @default(now()) @map(\"received_at\")\n\n  @@unique([source, externalId], map: \"notification_source_external_id_unique\")\n  @@map(\"notifications\")\n}\n",
   "inlineSchemaHash": "8e91399859ef1db0cbebef1cbc953fbcae10157f5ccab012de4ad46d44e27a17",
-  "copyEngine": false
+  "copyEngine": true
 }
 
 const fs = require('fs')
@@ -238,3 +238,9 @@ const PrismaClient = getPrismaClient(config)
 exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
+// file annotations for bundling tools to include these files
+path.join(__dirname, "query_engine-windows.dll.node");
+path.join(process.cwd(), "src/generated/prisma-client/query_engine-windows.dll.node")
+// file annotations for bundling tools to include these files
+path.join(__dirname, "schema.prisma");
+path.join(process.cwd(), "src/generated/prisma-client/schema.prisma")
