@@ -46,7 +46,7 @@ keystore.properties
 
 # Prisma generated client (M15: committed for Vercel deploy without engine binary)
 server/node_modules/.prisma/
-# But exclude platform-specific engine binaries from the committed client
+# Exclude platform-specific engine binaries (WASM is used at runtime)
 server/src/generated/prisma-client/*.node
 server/src/generated/prisma-client/*.dll
 server/src/generated/prisma-client/*.so
