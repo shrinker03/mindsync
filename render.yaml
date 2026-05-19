@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: mindsync-server
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: corepack enable && corepack prepare pnpm@9.12.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @mind-sync/shared build && pnpm --filter @mind-sync/server build
+    startCommand: cd server && node dist/index.js
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SYNC_BEARER_TOKEN
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: NODE_VERSION
+        value: 20
