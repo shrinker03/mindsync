@@ -185,23 +185,33 @@ paste bearer, see three tabs with formatted data; search "OTP" narrows SMS;
 pkg sidebar filters notifications.
 **→ /compact**
 
-## M15 — Remote deployment (Vercel + Neon)  ⬜
+## M15 — Remote deployment (Render + Neon)  ✅
 - Extract Express app: `server/src/app.ts` (default export) + thin
   `server/src/index.ts` for local dev (`app.listen`).
-- `server/api/index.ts` — Vercel function entrypoint that re-exports `app`.
-- `server/vercel.json` — `@vercel/node` builder, rewrite all paths → `/api/index`.
-- `server/src/log.ts` — when `process.env.VERCEL === '1'`, skip the file
-  transport (read-only filesystem on Vercel); stdout pino transport stays.
-- `server/package.json` — `vercel-build` + `postinstall` run `prisma generate`.
+- `@mind-sync/shared` builds to `dist/` (committed) so a downstream Node runtime
+  can load `.js` instead of `.ts`.
+- `server/src/db/prisma.ts` uses `@prisma/adapter-pg` with a pg `Pool` —
+  no engine binary trickery, just standard Postgres driver.
+- `server/package.json` keeps `postinstall: prisma generate` so the client
+  generates on every `pnpm install` (local + Render).
+- `render.yaml` Blueprint at repo root — `runtime: node`, builds shared+server
+  via `tsc`, starts `node dist/index.js`. Render reads it on Blueprint import.
 - Database: Neon free tier (no CC). One-time `prisma migrate deploy` against
   the Neon URL from local before first deploy.
-- App side: Settings tab → set server URL to `https://<project>.vercel.app`,
+- App side: Settings tab → set server URL to `https://<svc>.onrender.com`,
   paste token, "Test connection". No code change in app.
-- README: deployment runbook.
-- Commit: `feat: deploy server to Vercel + Neon` + `docs: deployment runbook`
+- README: Render deployment runbook (replaces the original Vercel attempt).
+- Commits: scaffold (`a321194`), Render migration (`6af0ed6`), pnpm script-shell
+  fix that was the real blocker (`f0a5cf6`).
 
-**Verify:** Push to `main` → Vercel auto-deploys; phone hits Vercel URL; rows
-land in Neon Postgres; shut down local server, sync still works.
+**Vercel detour:** Tried Vercel first. `@vercel/node` bundler doesn't trace
+`.node` or `.wasm` files, and our `.npmrc` had `script-shell=powershell`
+which broke Linux postinstall scripts. Spent 20+ commits chasing symptoms;
+root cause was the `.npmrc` line. Render works because it runs `node dist/...`
+on a real Linux VM — no bundler in the path.
+
+**Verify:** Push to `main` → Render auto-deploys; phone hits Render URL;
+rows land in Neon Postgres; shut down local server, sync still works.
 **→ /compact — remote ship.**
 
 ---

@@ -88,11 +88,17 @@ adb shell cmd notification allow_listener $pkg/.modules.MindSyncNotificationList
 
 ---
 
-## Remote deployment (Vercel + Neon)
+## Remote deployment (Render + Neon)
 
-Pushes the server to Vercel Hobby (free, no CC, push-to-deploy) backed by a
+Pushes the server to Render's free tier (no CC, push-to-deploy) backed by a
 Neon Postgres free-tier database. After this, the laptop doesn't need to be
 on for the phone to sync.
+
+Why Render and not Vercel: Vercel's serverless bundler (`@vercel/node` + ncc)
+doesn't trace binary asset files like the Prisma engine `.node` or `.wasm`,
+and it doesn't play well with `node-linker=hoisted` monorepo installs. Render
+just runs `node dist/index.js` like any normal VPS — Prisma's standard install
+flow works out of the box.
 
 ### One-time: Neon database
 
@@ -102,67 +108,62 @@ on for the phone to sync.
 2. From the local machine, push the schema once:
    ```powershell
    cd server
-   $env:DATABASE_URL = '<paste-neon-url>'
-   npx prisma migrate deploy
+   $env:DATABASE_URL = '<paste-neon-url>' ; npx prisma migrate deploy
    ```
 3. Optional: paste the same URL into a temp env and run
    `npx prisma studio` to confirm tables are created (then close it).
 
-### One-time: Vercel project
+### One-time: Render service
 
-1. Push the repo to GitHub if it isn't already. (`gh repo create`, etc.)
-2. [vercel.com](https://vercel.com) → **Add New** → **Project** → import the GitHub repo.
-3. **Framework Preset:** *Other*. **Root Directory:** `server`. Leave build
-   command + output dir empty — `vercel.json` drives the build.
-4. Under **Environment Variables**, add:
+1. Push the repo to GitHub if it isn't already.
+2. [render.com](https://render.com) → sign up with GitHub.
+3. Dashboard → **New +** → **Blueprint** → connect the repo. Render auto-detects
+   `render.yaml` at the root and proposes the `mindsync-server` Web Service.
+4. It prompts for the two `sync: false` env vars:
    - `DATABASE_URL` = the Neon URL from above
    - `SYNC_BEARER_TOKEN` = the same token the app uses
-   - `LOG_LEVEL` = `info`
-5. Click **Deploy**. First build runs `pnpm install` at the workspace root,
-   then `vercel-build` (`prisma generate`) inside `server/`, then bundles
-   `api/index.ts` with `@vercel/node`. Cold start is a few seconds.
-6. Once green, the URL is `https://<project>.vercel.app`. Test:
+   - (`LOG_LEVEL=info` and `NODE_VERSION=20` are pre-filled in the yaml.)
+5. Click **Apply**. First build takes ~3-5 min — installs pnpm workspace,
+   builds `@mind-sync/shared` then `@mind-sync/server`, starts `node dist/index.js`.
+6. Once "Live", the URL is `https://<name>-<hash>.onrender.com`. Test:
    ```powershell
    $token = '<your-token>'
-   Invoke-WebRequest -Uri "https://<project>.vercel.app/api/health" `
+   Invoke-WebRequest -Uri "https://<name>-<hash>.onrender.com/api/health" `
      -Headers @{ Authorization = "Bearer $token" } -UseBasicParsing
    ```
    Should return `{"status":"ok","uptime":...}`.
 
+### Free-tier caveat
+
+Render's free Web Service **spins down after 15 min of inactivity**. The next
+request after that pays a ~30–60s cold-start. For a 15-min sync cadence from
+the phone this means the first sync after a long idle is slow but works — the
+app retries on timeout. Upgrading the service to Starter ($7/mo) removes
+the spin-down if you want hot syncs.
+
 ### Per change
 
-`git push origin main` — Vercel auto-deploys. No other action.
+`git push origin main` — Render auto-deploys. No other action.
 
-### Point the phone at Vercel
+### Point the phone at Render
 
 In the app's **Settings** tab:
-- Server URL: `https://<project>.vercel.app`
+- Server URL: `https://<name>-<hash>.onrender.com`
 - Bearer token: same as `SYNC_BEARER_TOKEN`
 - **Test connection** → `200`. **Save**.
 
-The local server can now stay off; the phone syncs to Vercel directly.
-
-### Things that are *not* needed
-
-- No `Dockerfile`, no `vercel build` locally, no `vercel-cli` install.
-- No app rebuild — runtime config picks up the new URL/token from Settings.
-- No change to `AndroidManifest.xml`'s `usesCleartextTraffic` — Vercel is
-  HTTPS-only so the flag is unused there, but keeping it lets local LAN dev
-  still work.
+The local server can now stay off; the phone syncs to Render directly.
 
 ### Troubleshooting
 
-- **Build fails on `prisma generate`:** Vercel didn't pick up `postinstall`.
-  Confirm `server/package.json` has both `postinstall` and `vercel-build`
-  set to `prisma generate`.
-- **Function logs file-system error:** the `VERCEL=1` branch in `src/log.ts`
-  isn't being taken. Vercel sets that env var automatically — re-deploy and
-  check **Deployments → Logs**.
-- **`@mind-sync/shared` not found at build time:** the build is running
-  inside `server/` without seeing the workspace root. In Vercel project
-  settings, set **Install Command** to `cd .. && pnpm install --frozen-lockfile`
-  or enable **Include source files outside the Root Directory** under
-  *Advanced Build Settings*.
+- **Build fails with `ELIFECYCLE Command failed with exit code -2`:** Check
+  that `.npmrc` does NOT contain `script-shell=powershell` — that breaks
+  Linux builds since PowerShell isn't available.
+- **Runtime `ECONNREFUSED` on data endpoints:** `DATABASE_URL` in Render's
+  Environment tab is wrong. Replace with the Neon **pooled** URL (the one
+  ending in `?sslmode=require`). Render auto-restarts on env change.
+- **First request takes 30+ seconds:** Service was spun down (free-tier
+  behaviour). Wait for cold start; subsequent requests are fast.
 
 ---
 
