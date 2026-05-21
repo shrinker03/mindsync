@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "android:release": "Set-Location android; .\\gradlew.bat assembleRelease",
+    "android:release": "cd android && .\\gradlew.bat assembleRelease",
     "start": "react-native start",
     "lint": "eslint .",
     "test": "jest",
