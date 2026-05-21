@@ -1,6 +1,5 @@
 package com.mindsync.modules
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.service.notification.NotificationListenerService
@@ -18,18 +17,6 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         ensureChannel()
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("MindSync")
-            .setContentText("MindSync is capturing")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setOngoing(true)
-            .build()
-        startForeground(FOREGROUND_ID, notification)
-    }
-
-    override fun onListenerDisconnected() {
-        super.onListenerDisconnected()
-        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -60,14 +47,13 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "MindSync Capture",
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_MIN
         ).apply { description = "Persistent capture indicator" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     companion object {
-        const val CHANNEL_ID = "mind_sync_capture"
-        private const val FOREGROUND_ID = 1
+        const val CHANNEL_ID = "mind_sync_capture_v2"
         private var reactContextRef: WeakReference<ReactApplicationContext>? = null
 
         fun setReactContext(ctx: ReactApplicationContext) {
