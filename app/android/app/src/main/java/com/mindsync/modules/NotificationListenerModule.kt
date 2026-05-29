@@ -33,6 +33,16 @@ class NotificationListenerModule(reactContext: ReactApplicationContext) :
         reactApplicationContext.startActivity(intent)
     }
 
+    /** Reads and clears the durable notification queue, returning a JSON array string. */
+    @ReactMethod
+    fun drainQueue(promise: Promise) {
+        try {
+            promise.resolve(NotificationQueue.drainAsJsonArray(reactApplicationContext))
+        } catch (e: Exception) {
+            promise.reject("NOTIF_QUEUE_DRAIN_ERROR", e.message, e)
+        }
+    }
+
     @ReactMethod
     fun addListener(eventName: String) {}
 

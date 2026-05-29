@@ -44,6 +44,19 @@ async function handleNotification(event: NotificationEvent): Promise<void> {
   }
 }
 
+/**
+ * Drains notifications the native listener captured while JS wasn't running (app closed)
+ * and persists them. Runs inside the sync reconcile step, alongside SMS/call reconcile.
+ * Returns the number of queued events processed.
+ */
+export async function drainNativeNotifications(): Promise<number> {
+  const events = await NotificationListener.drainQueue();
+  for (const event of events) {
+    await handleNotification(event);
+  }
+  return events.length;
+}
+
 export function startNotificationCapture(): void {
   if (subscription) return;
   subscription = NotificationListener.onNotification(handleNotification);

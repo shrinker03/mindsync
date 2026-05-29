@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { runSync } from '../services/sync/syncRunner';
 import { syncSms } from '../services/smsSync';
 import { syncCalls } from '../services/callSync';
+import { drainNativeNotifications } from '../services/notificationCapture';
 import { appLog } from '../services/log';
 
 interface SyncState {
@@ -17,7 +18,7 @@ const RECONCILE_SETTLE_MS = 1500;
 
 async function reconcileLocal(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(() => resolve(), RECONCILE_SETTLE_MS));
-  const [smsAdded, callsAdded] = await Promise.all([
+  const [smsAdded, callsAdded, notifsAdded] = await Promise.all([
     syncSms().catch(e => {
       void appLog('warn', 'sync', 'syncSms failed', { message: (e as Error).message });
       return 0;
@@ -26,9 +27,13 @@ async function reconcileLocal(): Promise<void> {
       void appLog('warn', 'sync', 'syncCalls failed', { message: (e as Error).message });
       return 0;
     }),
+    drainNativeNotifications().catch(e => {
+      void appLog('warn', 'sync', 'drainNativeNotifications failed', { message: (e as Error).message });
+      return 0;
+    }),
   ]);
-  if (smsAdded > 0 || callsAdded > 0) {
-    void appLog('info', 'sync', 'reconciled', { smsAdded, callsAdded });
+  if (smsAdded > 0 || callsAdded > 0 || notifsAdded > 0) {
+    void appLog('info', 'sync', 'reconciled', { smsAdded, callsAdded, notifsAdded });
   }
 }
 

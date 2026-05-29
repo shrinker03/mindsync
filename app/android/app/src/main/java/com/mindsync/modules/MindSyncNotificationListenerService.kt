@@ -2,9 +2,12 @@ package com.mindsync.modules
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import android.util.LruCache
+import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
@@ -20,8 +23,6 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val ctx = reactContextRef?.get() ?: return
-        if (!ctx.hasActiveReactInstance()) return
         val extras = sbn.notification.extras
         val title = extras.getCharSequence("android.title")?.toString() ?: ""
         val text = extras.getCharSequence("android.text")?.toString() ?: ""
@@ -32,15 +33,48 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
         if (previous != null && previous == contentHash) return
         recentHashes.put(sbn.key, contentHash)
 
-        val payload = Arguments.createMap().apply {
-            putString("pkg", sbn.packageName)
-            putString("key", sbn.key)
-            putString("title", title)
-            putString("text", text)
-            putDouble("timestamp", sbn.postTime.toDouble())
+        // Always persist to the durable native queue. This service keeps running even when the
+        // app's JS is dead, so this is the only path that survives the app being closed. JS
+        // drains the queue on the next sync (where the denylist filter + dedupe are applied).
+        try {
+            NotificationQueue.enqueue(this, sbn.packageName, sbn.key, title, text, sbn.postTime)
+        } catch (e: Exception) {
+            Log.w(TAG, "failed to enqueue notification", e)
         }
-        ctx.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-            .emit("onNotification", payload)
+        kickSync()
+
+        // If JS is alive, also emit for immediate in-app capture. Harmless overlap with the
+        // queue drain — both insert by externalId with onConflictDoNothing, so no duplicates.
+        val ctx = reactContextRef?.get()
+        if (ctx != null && ctx.hasActiveReactInstance()) {
+            val payload = Arguments.createMap().apply {
+                putString("pkg", sbn.packageName)
+                putString("key", sbn.key)
+                putString("title", title)
+                putString("text", text)
+                putDouble("timestamp", sbn.postTime.toDouble())
+            }
+            ctx.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit("onNotification", payload)
+        }
+    }
+
+    // Kick a sync so queued notifications get drained promptly. Debounced so a burst of
+    // notifications doesn't spin up the sync service dozens of times — one kick drains them all.
+    private fun kickSync() {
+        val now = System.currentTimeMillis()
+        synchronized(kickLock) {
+            if (now - lastKickAt < KICK_DEBOUNCE_MS) return
+            lastKickAt = now
+        }
+        try {
+            val svc = Intent(this, SyncTaskService::class.java).apply {
+                putExtra(SyncTaskService.EXTRA_REASON, "notification")
+            }
+            ContextCompat.startForegroundService(this, svc)
+        } catch (e: Exception) {
+            Log.w(TAG, "failed to kick SyncTaskService", e)
+        }
     }
 
     private fun ensureChannel() {
@@ -54,6 +88,12 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
 
     companion object {
         const val CHANNEL_ID = "mind_sync_capture_v2"
+        private const val TAG = "MindSync.NotifListener"
+        private const val KICK_DEBOUNCE_MS = 4_000L
+
+        private val kickLock = Any()
+        private var lastKickAt = 0L
+
         private var reactContextRef: WeakReference<ReactApplicationContext>? = null
 
         fun setReactContext(ctx: ReactApplicationContext) {

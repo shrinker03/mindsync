@@ -18,4 +18,17 @@ export const NotificationListener = {
 
   onNotification: (handler: (event: NotificationEvent) => void) =>
     DeviceEventEmitter.addListener('onNotification', handler),
+
+  /**
+   * Drains notifications the native listener captured while JS wasn't running (app closed).
+   * Reads and clears the durable native queue.
+   */
+  drainQueue: async (): Promise<NotificationEvent[]> => {
+    const json = await NativeNotificationListener.drainQueue();
+    try {
+      return JSON.parse(json) as NotificationEvent[];
+    } catch {
+      return [];
+    }
+  },
 };
