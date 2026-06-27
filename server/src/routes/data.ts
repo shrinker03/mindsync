@@ -95,6 +95,33 @@ dataRouter.get('/calls', async (req, res, next) => {
   }
 });
 
+// TEMPORARY one-off maintenance endpoint — remove after dedupe is run.
+// Collapses same-content notifications captured within GAP_MS of each other
+// (group-summary duplicates: child + summary share title/text but differ by key),
+// keeping the earliest row of each burst. Dry-run unless ?apply=true.
+dataRouter.post('/dedupe-notifications', async (req, res, next) => {
+  try {
+    const GAP_MS = 3000; // genuine reposts are >60s apart; summary dups are <500ms
+    const selectIds = `
+      SELECT id FROM (
+        SELECT id, timestamp - LAG(timestamp) OVER (
+          PARTITION BY source, pkg, title, text ORDER BY timestamp, id) AS gap
+        FROM notifications
+      ) s WHERE s.gap IS NOT NULL AND s.gap < ${GAP_MS}`;
+    if (req.query.apply !== 'true') {
+      const rows = await prisma.$queryRawUnsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM (${selectIds}) x`,
+      );
+      res.json({ dryRun: true, wouldDelete: rows[0]?.n ?? 0 });
+      return;
+    }
+    const deleted = await prisma.$executeRawUnsafe(`DELETE FROM notifications WHERE id IN (${selectIds})`);
+    res.json({ dryRun: false, deleted });
+  } catch (e) {
+    next(e);
+  }
+});
+
 dataRouter.get('/notifications/pkgs', async (_req, res, next) => {
   try {
     const rows = await prisma.notification.groupBy({
