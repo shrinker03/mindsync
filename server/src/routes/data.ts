@@ -95,6 +95,27 @@ dataRouter.get('/calls', async (req, res, next) => {
   }
 });
 
+// TEMPORARY one-off maintenance endpoint — remove after purge is run.
+// Deletes all notifications for an exact package. Dry-run unless ?apply=true.
+dataRouter.post('/purge-pkg', async (req, res, next) => {
+  try {
+    const pkg = typeof req.query.pkg === 'string' ? req.query.pkg.trim() : '';
+    if (!pkg) {
+      res.status(400).json({ error: 'pkg query param required' });
+      return;
+    }
+    if (req.query.apply !== 'true') {
+      const wouldDelete = await prisma.notification.count({ where: { pkg } });
+      res.json({ dryRun: true, pkg, wouldDelete });
+      return;
+    }
+    const result = await prisma.notification.deleteMany({ where: { pkg } });
+    res.json({ dryRun: false, pkg, deleted: result.count });
+  } catch (e) {
+    next(e);
+  }
+});
+
 dataRouter.get('/notifications/pkgs', async (_req, res, next) => {
   try {
     const rows = await prisma.notification.groupBy({
