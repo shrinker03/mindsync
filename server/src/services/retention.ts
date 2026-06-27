@@ -5,19 +5,29 @@ import { log } from '../log.js';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const INTERVAL_MS = 12 * 60 * 60 * 1000;
 
+export type PruneCounts = { sms: number; calls: number; notifications: number };
+
 /**
- * Deletes notifications whose post time is older than NOTIFICATION_RETENTION_DAYS.
- * SMS and call logs are intentionally left alone — they're durable records, not noise.
- * Returns the number of rows deleted. Pruning is skipped when retention is <= 0.
+ * Deletes sms, call, and notification records older than RETENTION_DAYS, by their
+ * own event time (sms/call `date`, notification `timestamp`, all epoch ms).
+ * Returns per-table counts. Pruning is skipped when retention is <= 0.
  */
-export async function pruneOldNotifications(): Promise<number> {
-  const days = config.notificationRetentionDays;
-  if (!Number.isFinite(days) || days <= 0) return 0;
+export async function pruneOldRecords(): Promise<PruneCounts> {
+  const days = config.retentionDays;
+  if (!Number.isFinite(days) || days <= 0) return { sms: 0, calls: 0, notifications: 0 };
 
   const cutoff = BigInt(Date.now() - days * DAY_MS);
-  const result = await prisma.notification.deleteMany({ where: { timestamp: { lt: cutoff } } });
-  if (result.count > 0) log.info({ deleted: result.count, retentionDays: days }, 'pruned old notifications');
-  return result.count;
+  const [sms, calls, notifications] = await Promise.all([
+    prisma.smsMessage.deleteMany({ where: { date: { lt: cutoff } } }),
+    prisma.callEntry.deleteMany({ where: { date: { lt: cutoff } } }),
+    prisma.notification.deleteMany({ where: { timestamp: { lt: cutoff } } }),
+  ]);
+
+  const counts: PruneCounts = { sms: sms.count, calls: calls.count, notifications: notifications.count };
+  if (counts.sms + counts.calls + counts.notifications > 0) {
+    log.info({ ...counts, retentionDays: days }, 'pruned old records');
+  }
+  return counts;
 }
 
 /**
@@ -26,7 +36,7 @@ export async function pruneOldNotifications(): Promise<number> {
  */
 export function startRetentionJob(): void {
   const run = (): void => {
-    void pruneOldNotifications().catch(e => log.error(e, 'notification retention prune failed'));
+    void pruneOldRecords().catch(e => log.error(e, 'retention prune failed'));
   };
   run();
   const timer = setInterval(run, INTERVAL_MS);

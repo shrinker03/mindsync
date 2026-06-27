@@ -13,6 +13,7 @@ export const config = {
   syncBearerToken: required('SYNC_BEARER_TOKEN'),
   port: Number(process.env.PORT ?? 3000),
   logLevel: process.env.LOG_LEVEL ?? 'info',
-  // Notifications older than this are auto-pruned. 0 (or negative) disables pruning.
-  notificationRetentionDays: Number(process.env.NOTIFICATION_RETENTION_DAYS ?? 14),
+  // Records (sms, calls, notifications) older than this are auto-pruned.
+  // 0 (or negative) disables pruning.
+  retentionDays: Number(process.env.RETENTION_DAYS ?? 14),
 } as const;

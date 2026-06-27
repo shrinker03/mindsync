@@ -15,7 +15,7 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-      - key: NOTIFICATION_RETENTION_DAYS
+      - key: RETENTION_DAYS
         value: 14
       - key: NODE_VERSION
         value: 20
