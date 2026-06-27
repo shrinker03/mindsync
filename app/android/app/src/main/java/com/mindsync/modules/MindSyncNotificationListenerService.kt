@@ -1,5 +1,6 @@
 package com.mindsync.modules
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
@@ -23,6 +24,11 @@ class MindSyncNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        // Skip group-summary notifications. Apps like Gmail/Slack/WhatsApp post a summary
+        // alongside each child with the same title/text but a different sbn.key, so it gets
+        // a different externalId and slips past dedup — the main source of duplicate rows.
+        if (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+
         val extras = sbn.notification.extras
         val title = extras.getCharSequence("android.title")?.toString() ?: ""
         val text = extras.getCharSequence("android.text")?.toString() ?: ""
